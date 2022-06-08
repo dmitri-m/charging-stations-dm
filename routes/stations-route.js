@@ -1,10 +1,10 @@
 const express = require('express');
-const {Stations, Companies} = require('../model/station');
+const {Stations, Companies, StationType} = require('../model');
 const router = express.Router();
 const _ = require('lodash');
-const { onDbError, withId, dataResponse } = require('../util');
+const { onDbError, withId, dataResponse, getChildCompanies, } = require('../util');
 
-const fields = req => _.pick(req.body, 'name')
+const fields = req => _.pick(req.body, 'name', 'stationTypeId')
 
 router.get('/stations', function(req, res, next) {
   console.log('get stations');
@@ -13,7 +13,19 @@ router.get('/stations', function(req, res, next) {
     .catch(err => onDbError(res, err));
 });
 
-router.post('/companies/:company/station', function(req, res, next) {
+router.get('/companies/:company/stations', function(req, res, next) {
+  console.log('retrieve all company stations (with child companies)');
+
+  getChildCompanies(req.params.company)
+    .then(list => [req.params.company, ...list.map(c => c.id)])
+    .then(companies => Stations.findAll({
+      where: {companyId: companies}, 
+      include:[{model: StationType}]
+    }))
+    .then(_ => res.json(_))
+});
+
+router.post('/companies/:company/stations', function(req, res, next) {
   console.log('create station', req.body);
   Stations.create({companyId: req.params.company, ...fields(req)})
     .then(rec => res.json(rec))

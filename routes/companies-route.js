@@ -1,8 +1,8 @@
 const express = require('express');
-const {Companies} = require('../model/station');
+const {Companies, Stations} = require('../model');
 const router = express.Router();
 const _ = require('lodash');
-const { onDbError, withId, dataResponse } = require('../util');
+const { onDbError, withId, dataResponse, } = require('../util');
 
 const fields = req => _.pick(req.body, 'name')
 
@@ -27,9 +27,12 @@ router.post('/companies/:parent', function(req, res, next) {
     .catch(err => onDbError(res, err));
 });
 
+
 router.get('/companies/:id', function(req, res, next) {
   console.log('get company', req.params.id);
-  Companies.findOne(withId(req.params.id))
+  const condition = {...withId(req.params.id), raw: true};
+
+  Companies.findOne(condition)
     .then(rec => dataResponse(res, rec))
     .catch(err => onDbError(res, err));
 });
@@ -49,5 +52,3 @@ router.delete('/companies/:id', function(req, res, next) {
 });
 
 module.exports = router;
-
-
